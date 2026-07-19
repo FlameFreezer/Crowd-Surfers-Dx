@@ -57,7 +57,7 @@ var stateColors = {
 ##Snap length to ensure smooth movement on slopes
 @export var snap_length = 5.0
 ## Translational turning acceleration factor
-@export var turning_speed: float = 15.0
+@export var turning_speed: float = 7.0
 
 # Jumping
 @export_category("Jumping")
