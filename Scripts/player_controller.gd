@@ -56,6 +56,8 @@ var stateColors = {
 @export var max_crowd_slowdown: float = 0.8
 ##Snap length to ensure smooth movement on slopes
 @export var snap_length = 5.0
+## Translational turning acceleration factor
+@export var turning_speed: float = 15.0
 
 # Jumping
 @export_category("Jumping")
@@ -686,6 +688,12 @@ func transition_to(new_state: int) -> void:
 	current_state = new_state
 	#print(state_to_string())
 
+func length_xz(vector: Vector3) -> float:
+	return Vector3(vector.x, 0.0, vector.z).length()
+
+func vector_xz(vector: Vector3) -> Vector3:
+	return Vector3(vector.x, 0.0, vector.z)
+	
 ## Handles inputs for standard movement and the dash
 func handle_inputs(delta: float) -> void:
 	# Get directional inputs
@@ -700,26 +708,23 @@ func handle_inputs(delta: float) -> void:
 		if player_sprite.current_animation == "crash_exit":
 			player_sprite.stop()
 			player_sprite.current_animation = ""
-		var factorx: float = acceleration * delta
-		var factorz: float = acceleration * delta
 		
-		# Add friction if direction is opposite the velocity for x direction
-		if sign(direction.x) != sign(velocity.x):
-			factorx += friction * delta
-		# Prevents speed loss on any 45 degree turn increments on the x direction
-		elif (abs(velocity.x) > abs(direction.x * max_speed) and direction.x != 0 and current_state == States.GROUND):
-			velocity.x = direction.x * max_speed
-			velocity.z = direction.z * max_speed
-		# Add friction if direction is opposite the velocity for z direction
-		if sign(direction.z) != sign(velocity.z):
-			factorz += friction * delta
-		# Prevents speed loss on any 45 degree turn increments on the z direction
-		elif (abs(velocity.z) > abs(direction.z * max_speed) and direction.z != 0 and current_state == States.GROUND):
-			velocity.x = direction.x * max_speed
-			velocity.z = direction.z * max_speed
-		# Apply speed
-		velocity.x = move_toward(velocity.x, direction.x * max_speed , factorx)
-		velocity.z = move_toward(velocity.z, direction.z * max_speed , factorz)
+		var velocity_xz := vector_xz(velocity)
+		# If the input is not in the direction of velocity, do turning
+		if velocity_xz.dot(direction) != velocity_xz.length() * direction.length():
+			var rotate_dir := signf(velocity_xz.cross(direction).y)
+			var angle := acos(velocity_xz.normalized().dot(direction))
+			var rotate_amount := turning_speed * delta
+			
+			velocity_xz = velocity_xz.rotated(Vector3.UP, min(angle, rotate_amount) * rotate_dir)
+			velocity.x = velocity_xz.x
+			velocity.z = velocity_xz.z
+		# Accelerate in the direction of input
+		velocity += direction * acceleration * delta
+		if length_xz(velocity) > max_speed:
+			velocity_xz = max_speed * vector_xz(velocity).normalized()
+			velocity.x = velocity_xz.x
+			velocity.z = velocity_xz.z
 	#Apply friction if no inputs are given
 	else:
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
