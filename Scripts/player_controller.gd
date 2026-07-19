@@ -56,8 +56,10 @@ var stateColors = {
 @export var max_crowd_slowdown: float = 0.8
 ##Snap length to ensure smooth movement on slopes
 @export var snap_length = 5.0
-## Translational turning acceleration factor
+## Base turning speed in radians per second
 @export var turning_speed: float = 7.0
+## Minimum turning speed in radians per second
+@export var minimum_turning_speed: float = 3.4
 
 # Jumping
 @export_category("Jumping")
@@ -714,7 +716,9 @@ func handle_inputs(delta: float) -> void:
 		if velocity_xz.dot(direction) != velocity_xz.length() * direction.length():
 			var rotate_dir := signf(velocity_xz.cross(direction).y)
 			var angle := acos(velocity_xz.normalized().dot(direction))
-			var rotate_amount := turning_speed * delta
+			var turning_dampening := log(base_ramping_cap) / (turning_speed - minimum_turning_speed)
+			# Safe to take log(veocity_xz.length()) because the above condition ensures it is never zero
+			var rotate_amount := delta * maxf(minimum_turning_speed, turning_speed - log(velocity_xz.length()) / turning_dampening)
 			
 			velocity_xz = velocity_xz.rotated(Vector3.UP, min(angle, rotate_amount) * rotate_dir)
 			velocity.x = velocity_xz.x
