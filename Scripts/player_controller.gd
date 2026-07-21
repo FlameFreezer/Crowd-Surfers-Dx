@@ -713,6 +713,12 @@ func handle_inputs(delta: float) -> void:
 			velocity.z = velocity_xz.z
 		# Accelerate in the direction of motion
 		var accel_dir = vector_xz(velocity).normalized()
+		# Set components to zero if they are very small to account for floating point error
+		const SMALL_DELTA := 0.02
+		if abs(accel_dir.x) <= SMALL_DELTA:
+			accel_dir.x = 0.0
+		if abs(accel_dir.z) <= SMALL_DELTA:
+			accel_dir.z = 0.0
 		# If player is stationary, take the input direction instead
 		if accel_dir == Vector3.ZERO:
 			accel_dir = direction
