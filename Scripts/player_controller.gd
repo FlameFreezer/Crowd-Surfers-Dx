@@ -711,12 +711,19 @@ func handle_inputs(delta: float) -> void:
 			velocity_xz = velocity_xz.rotated(Vector3.UP, min(angle, rotate_amount) * rotate_dir)
 			velocity.x = velocity_xz.x
 			velocity.z = velocity_xz.z
-		# Accelerate in the direction of input
-		velocity += direction * acceleration * delta
-		if length_xz(velocity) > max_speed:
-			velocity_xz = max_speed * vector_xz(velocity).normalized()
-			velocity.x = velocity_xz.x
-			velocity.z = velocity_xz.z
+		# Accelerate in the direction of motion
+		var accel_dir = vector_xz(velocity).normalized()
+		# If player is stationary, take the input direction instead
+		if accel_dir == Vector3.ZERO:
+			accel_dir = direction
+		# Reverse any components of the accel_dir that are opposite the input to allow doubling back
+		if sign(accel_dir.x) != sign(direction.x) and sign(accel_dir.x) != 0.0:
+			accel_dir.x *= -1.0
+		if sign(accel_dir.z) != sign(direction.z) and sign(accel_dir.z) != 0.0:
+			accel_dir.z *= -1.0
+		# Accelerate towards max speed
+		velocity.x = move_toward(velocity.x, accel_dir.x * max_speed, acceleration * delta)
+		velocity.z = move_toward(velocity.z, accel_dir.z * max_speed, acceleration * delta)
 	#Apply friction if no inputs are given
 	else:
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
