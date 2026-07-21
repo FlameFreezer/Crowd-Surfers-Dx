@@ -225,7 +225,7 @@ var is_playing_crash: bool = false
 var prev_velocity: Vector3
 
 ## The current state the player is in
-var current_state: int = States.GROUND
+var current_state: int = States.AIR
 
 func _ready() -> void:
 	#aglobal_position = PlayerSpawn.spawnpoint
