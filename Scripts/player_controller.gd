@@ -174,7 +174,7 @@ func crowd_launch() -> void:
 	velocity.y = jump_speed * 0.8 
 	
 	if not current_state == States.DASH_GROUND:
-		speed_before_dashing = Vector2(velocity.x, velocity.z).length()
+		#speed_before_dashing = Vector2(velocity.x, velocity.z).length()
 		stomp_dash_start_pos = position
 		# Get directional inputs
 		var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -208,7 +208,7 @@ var speed_before_gliding: float
 var max_speed_before_gliding: float
 var glide_vfxs_spawned: int = 0
 var stomp_boost: float = 0.0
-var speed_before_dashing: float
+#var speed_before_dashing: float
 var dash_dir: Vector3
 var dash_speed: float
 var dash_start_pos: Vector3
@@ -312,14 +312,7 @@ func process_state(delta: float) -> void:
 		States.STOMP_FALL:
 			fall(delta)
 			stomp_boost = move_toward(stomp_boost, max_stomp_dash_boost, stomp_dash_boost_factor * delta)
-		States.DASH_AIR:
-			#fall(delta)
-			var magnitude = sqrt(pow(velocity.x,2)+pow(velocity.z,2));
-			if (magnitude <= base_ramping_cap/2):
-				fall(delta)
-			else:
-				velocity.y = 0.0
-		States.DASH_GROUND:
+		States.DASH_AIR, States.DASH_GROUND:
 			velocity.y = 0.0
 		States.GLIDE:
 			# Increase total time gliding
@@ -550,10 +543,6 @@ func transition_to(new_state: int) -> void:
 		States.DASH_GROUND:
 			has_crowd_dash_boost = false
 			if not new_state == States.DASH_AIR:
-				# Reset speed if ending a ground dash
-				#var yspeed := velocity.y
-				#velocity = dash_dir * speed_before_dashing
-				#velocity.y = yspeed
 				$DashCooldownTimer.start()
 		States.DASH_AIR:
 			has_crowd_dash_boost = false
@@ -575,6 +564,8 @@ func transition_to(new_state: int) -> void:
 				#player_sprite.crash_dir = -velocity
 				player_sprite.play_animation("crash_exit")
 				print("Crash Exit!")
+			if current_state == States.STOMP_FALL:
+				max_speed = starting_speed
 		States.COYOTE:
 			$CoyoteTimer.start()
 		States.CRASH_GROUND, States.CRASH_AIR:
@@ -599,10 +590,9 @@ func transition_to(new_state: int) -> void:
 			if stomp_resets_air_dash:
 				can_air_dash = true
 			# Store values needed for the stomp-dash
-			velocity_before_stomp = Vector3(velocity.x, 0, velocity.z)	
+			velocity_before_stomp = Vector3(velocity.x, 0, velocity.z)
 			max_speed_before_stomp = max(max_speed, starting_speed)
 			ramping_cap_before_stomp = ramping_cap
-			max_speed = starting_speed
 			# Decrease the player's speed if it is too large
 			if velocity.length() > max_speed_for_windup:
 				velocity = velocity.normalized() * max_speed_for_windup
@@ -640,7 +630,6 @@ func transition_to(new_state: int) -> void:
 			can_air_dash = false
 			# Don't reapply dash boost if going from ground dash to air dash
 			if not current_state == States.DASH_GROUND:
-				speed_before_dashing = Vector2(velocity.x, velocity.z).length()
 				dash_start_pos = position
 				# Get directional inputs
 				var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -663,12 +652,11 @@ func transition_to(new_state: int) -> void:
 						else:
 							vfx_manager.spawn_vfx(position, velocity, "crowd_dash")
 							vfx_manager.spawn_vfx(position + 0.2 * Vector3(velocity.x, 0, velocity.z), velocity, "crowd_dash")
-						
-					max_speed = max(max_speed, max_speed_before_stomp)
-					# If you successfully stomp-dash, retain your speed
-					if not $StompDashMargin.is_stopped():
-						max_speed = min(max_speed+stomp_boost,ramping_cap)
-						new_state = States.DASH_AIR
+					
+					# Set max speed to the highest of these. Either leave it unchanged, take the
+					# speed before stomping (for stomp-dash), or take the dash_speed so long as its
+					# below the ramping cap
+					max_speed = max(max_speed, max_speed_before_stomp, min(dash_speed, base_ramping_cap))
 					# Apply dash to xz-direction and ignore y component of velocity
 					var yspeed := velocity.y
 					velocity = dash_dir * dash_speed
