@@ -1,7 +1,7 @@
 extends AnimatedSprite3D
 
 @export var player_path: NodePath
-@export var deadzone: float = 0.2
+@export var deadzone: float = 0.35
 
 @export var stomp_speed: float = 5.0 
 @export var glide_animation_speed: float = 10.0
@@ -91,7 +91,7 @@ func play_animation(action: String, continue_animation: bool = false, custom_spe
 	var dir := v
 	if action == "crash" or action == "crash_exit":
 		dir = crash_dir
-		
+	dir = dir.normalized()
 	play(action + get_animation_dir(dir.x, dir.z), custom_speed)
 	set_frame_and_progress(current_frame, current_progress)
 
