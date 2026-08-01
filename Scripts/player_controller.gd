@@ -60,6 +60,8 @@ var stateColors = {
 @export var turning_speed: float = 7.0
 ## Minimum turning speed in radians per second
 @export var minimum_turning_speed: float = 3.4
+## Angle margin (in degrees) within which an input will be snapped to one of the 8 cardinal directions
+@export var input_snap_angle_margin: float = 15.0
 
 # Jumping
 @export_category("Jumping")
@@ -689,32 +691,32 @@ func _snap_input_dir(input_dir: Vector2) -> Vector2:
 	if input_dir == Vector2.ZERO:
 		return input_dir
 		
-	const MARGIN := deg_to_rad(5.0)
+	var margin := deg_to_rad(input_snap_angle_margin)
 	var angle := input_dir.angle()
 	
 	# Snap right
-	if abs(angle) < MARGIN:
+	if abs(angle) < margin:
 		return Vector2.RIGHT
 	# Snap 45 degrees
-	if abs(angle - deg_to_rad(-45)) < MARGIN:
+	if abs(angle - deg_to_rad(-45)) < margin:
 		return Vector2(1.0, -1.0).normalized()
 	# Snap UP
-	if abs(angle - deg_to_rad(-90)) < MARGIN:
+	if abs(angle - deg_to_rad(-90)) < margin:
 		return Vector2.UP
 	# Snap 135 degrees
-	if abs(angle - deg_to_rad(-135)) < MARGIN:
+	if abs(angle - deg_to_rad(-135)) < margin:
 		return Vector2(-1.0, -1.0).normalized()
 	# Snap LEFT
-	if abs(angle - deg_to_rad(180)) < MARGIN:
+	if abs(angle - deg_to_rad(180)) < margin:
 		return Vector2.LEFT
 	# Snap 225 degrees
-	if abs(angle - deg_to_rad(45)) < MARGIN:
+	if abs(angle - deg_to_rad(45)) < margin:
 		return Vector2(1.0, 1.0).normalized()
 	# Snap DOWN
-	if abs(angle - deg_to_rad(90)) < MARGIN:
+	if abs(angle - deg_to_rad(90)) < margin:
 		return Vector2.DOWN
 	# Snap 315 degrees
-	if abs(angle - deg_to_rad(135)) < MARGIN:
+	if abs(angle - deg_to_rad(135)) < margin:
 		return Vector2(-1.0, 1.0).normalized()
 	# No snap
 	return input_dir
