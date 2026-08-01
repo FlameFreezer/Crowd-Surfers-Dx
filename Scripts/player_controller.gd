@@ -684,10 +684,46 @@ func length_xz(vector: Vector3) -> float:
 func vector_xz(vector: Vector3) -> Vector3:
 	return Vector3(vector.x, 0.0, vector.z)
 	
+func _snap_input_dir(input_dir: Vector2) -> Vector2:
+	# Reject if there is no input
+	if input_dir == Vector2.ZERO:
+		return input_dir
+		
+	const MARGIN := deg_to_rad(5.0)
+	var angle := input_dir.angle()
+	
+	# Snap right
+	if abs(angle) < MARGIN:
+		return Vector2.RIGHT
+	# Snap 45 degrees
+	if abs(angle - deg_to_rad(-45)) < MARGIN:
+		return Vector2(1.0, -1.0).normalized()
+	# Snap UP
+	if abs(angle - deg_to_rad(-90)) < MARGIN:
+		return Vector2.UP
+	# Snap 135 degrees
+	if abs(angle - deg_to_rad(-135)) < MARGIN:
+		return Vector2(-1.0, -1.0).normalized()
+	# Snap LEFT
+	if abs(angle - deg_to_rad(180)) < MARGIN:
+		return Vector2.LEFT
+	# Snap 225 degrees
+	if abs(angle - deg_to_rad(45)) < MARGIN:
+		return Vector2(1.0, 1.0).normalized()
+	# Snap DOWN
+	if abs(angle - deg_to_rad(90)) < MARGIN:
+		return Vector2.DOWN
+	# Snap 315 degrees
+	if abs(angle - deg_to_rad(135)) < MARGIN:
+		return Vector2(-1.0, 1.0).normalized()
+	# No snap
+	return input_dir
+	
 ## Handles inputs for standard movement and the dash
 func handle_inputs(delta: float) -> void:
 	# Get directional inputs
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	input_dir = _snap_input_dir(input_dir)
 	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
 	# if the player stops moving reset the current speed
